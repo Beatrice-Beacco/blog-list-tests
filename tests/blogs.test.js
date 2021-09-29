@@ -1,9 +1,18 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const helper = require('./test_helper')
 const app = require('../app')
-const Note = require('../models/note')
+
 
 const api = supertest(app)
+
+const Blog = require('../models/blog')
+
+beforeEach(async () => {
+    await Blog.deleteMany({})
+    console.log(helper.initialBlogs);
+    await Blog.insertMany(helper.initialBlogs)
+})
 
 
 //Checks if the data is in JSON format
@@ -15,7 +24,7 @@ test('returned blogs', async () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
     
-    expect(response.body).toHaveLength(1)
+    expect(response.body).toHaveLength(2)
     expect(response.body[0].id).toBeDefined()
 })
 
@@ -46,6 +55,59 @@ test('added blogs', async () => {
 
     expect(response.body).toHaveLength(oldDB.body.length + 1)
     expect(names).toContain('Panzerotto')
+})
+
+//Gets the blogs with a get request, then checks every element
+//if likes is present checks it, otherwise creates a 0 likes attribute
+ test('has likes', async () => {
+    let blogs = await api
+        .get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+    for (let blog of blogs.body) {
+        if(blog.likes){
+        expect(blog.likes).toBeDefined()
+        }  else {
+            blog.likes = 0
+        }
+    }
+})
+
+///Checks if name and the URL are defined, else sends them to
+//error 400 to the api
+test('check new content', async () => {
+
+    const oldDB = await api.get('/api/blogs')
+
+    const newBlog = {
+        name: "Cicciotto",
+        author: "Panzerotto",
+        likes: 99,
+        link: "coolblog.com",
+    }
+
+    if(newBlog.name && newBlog.link){
+
+    expect(newBlog.name).toBeDefined()
+    expect(newBlog.link).toBeDefined()
+
+    await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+    const response = await api.get('/api/blogs')
+
+    const names = response.body.map(r => r.author)
+
+    expect(response.body).toHaveLength(oldDB.body.length + 1)
+    expect(names).toContain('Panzerotto')
+
+    } else {
+        api.status(400).send()
+    }
 })
 
 afterAll(() => {
