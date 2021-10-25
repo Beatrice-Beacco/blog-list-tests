@@ -4,7 +4,7 @@ require('express-async-errors')
 
 //Deletes an entry based on the id
 blogsRouter.delete('/:id', async (request, response) => {
-    await Blog.findByIdAndRemove(request.params.id)
+    const result = await Blog.findByIdAndRemove(request.params.id)
     response.status(204).end()
 })
 
@@ -36,6 +36,11 @@ blogsRouter.get('/', async (request, response) => {
 //Defines the post request using the blog schema
 //Async/await syntax
 blogsRouter.post('/', async (request, response) => {
+
+    const body = request.body
+
+    if (!body.name || !body.link) return response.status(400).end()
+
     const blog = new Blog(request.body)
     const newEntry = await blog.save()
     response.status(201).json(newEntry)

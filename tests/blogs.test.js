@@ -9,7 +9,6 @@ const api = supertest(app)
 
 beforeEach(async () => {
     await Blog.deleteMany({})
-    console.log(helper.initialBlogs);
     await Blog.insertMany(helper.initialBlogs)
 })
 
@@ -125,7 +124,7 @@ test('incomplete content', async () => {
 test('delete by id', async () => {
     const blogsAtStart = await helper.blogsInDb()
     expect(blogsAtStart).toBeDefined()
-    const blogToDelete = blogsAtStart[0]
+    const blogToDelete = blogsAtStart[0] 
 
     await api
         .delete(`/api/notes/${blogToDelete.id}`)
